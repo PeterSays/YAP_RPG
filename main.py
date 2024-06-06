@@ -1,3 +1,5 @@
+import random
+
 import pygame
 from pygame.locals import *
 from Zone import Zone
@@ -34,12 +36,33 @@ climate_map = [  # first dimension is temperature, second is precip
 
 def generate_world(ses, lat, lon):
     new_world = []
+
+    current_temp = random.randint(0, 2)
+    current_prec = random.randint(0, 2)
+    temp_direction_col = random.randint(-100, 100) / 100
+    temp_direction_row = random.randint(-100, 100) / 100
+    prec_direction_col = random.randint(-100, 100) / 100
+    prec_direction_row = random.randint(-100, 100) / 100
+    starting_zone = None
+
     for row in range(lon):  # making zone array
         new_row = []
         for col in range(lat):
-            new_zone = Zone(ses, 20, 15)
+            index_temp = round(max(min(2, current_temp), 0))  # takes care of over-/under- values
+            index_prec = round(max(min(2, current_prec), 0))
+            new_zone = Zone(ses, 20, 15, current_temp, current_prec, tilesets=(climate_map[index_temp][index_prec], climate_map[index_temp][index_prec]))
             new_row.append(new_zone)
+
+            if row == round((lat-1)/2) and col == round((lon-1)/2):
+                starting_zone = new_zone
+
+            current_temp += temp_direction_col
+            current_prec += prec_direction_col
+
         new_world.append(new_row)
+
+        current_temp += temp_direction_row
+        current_prec += prec_direction_row
 
     for row in range(lon):  # connecting adjacent zones
         for col in range(lat):
@@ -55,6 +78,9 @@ def generate_world(ses, lat, lon):
                 this_zone.east_neighbor = new_world[row][col+1]
 
             this_zone.initialized = True
+
+    starting_zone.load(session)
+
     return new_world
 
 

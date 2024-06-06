@@ -3,3 +3,5 @@ regular turns give access to every body part
 extra turns are prompted at random after first move selection
 extra turns more possible with very fast limbs, but may only use those limbs
 turn order decided by average AGI across all body parts
+save session: acts as regular gamestate saving
+save zone: marks loaded zone to store a copy of once unloaded, can be added to new worlds during generation

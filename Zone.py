@@ -4,7 +4,7 @@ from random import choice
 from Tile import Tile
 
 class Zone:
-    def __init__(self, session, t_col, t_row, tilesets=('grass', 'grass')):
+    def __init__(self, session, t_col, t_row, temper, precip, tilesets=('grass', 'grass')):
         self.x = 0
         self.y = 0
         self.tilesets = tilesets
@@ -12,6 +12,9 @@ class Zone:
         self.tile_col = t_col
         self.tile_row = t_row
         self.tile_spritenames = {}
+
+        self.temperature = temper
+        self.precipitation = precip
 
         self.north_neighbor = None
         self.south_neighbor = None
