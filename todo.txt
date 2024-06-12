@@ -3,5 +3,11 @@ regular turns give access to every body part
 extra turns are prompted at random after first move selection
 extra turns more possible with very fast limbs, but may only use those limbs
 turn order decided by average AGI across all body parts
+
 save session: acts as regular gamestate saving
-save zone: marks loaded zone to store a copy of once unloaded, can be added to new worlds during generation
+save zone: marks loaded zone to store a copy of once unloaded, can be added to worlds during generation on new games
+save character: saves a copy of the player object, isolated from current game associations, to be used next game
+
+place entities and structures in a zone when loading, remove them all when unloading the zone
+zone attributes like faction populations are edited while playing so that reloading the zone doesn't reset progress
+when zone is loaded, its structures and entities are loaded into the session's entities/structures list

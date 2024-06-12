@@ -74,4 +74,4 @@ def make_lines(new_path, bgtile='blank_0.png'):
 
 
 # make_lines('test.png')
-# replace_color('result.png', 'tiles/greyed_0.png', (163, 156, 62), (185, 178, 85), (147, 137, 70))
+replace_color('tropic.png', 'tiles/greyed_0.png', (150, 158, 85), (163, 179, 62), (176, 159, 79))

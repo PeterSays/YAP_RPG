@@ -4,7 +4,7 @@ from random import choice
 from Tile import Tile
 
 class Zone:
-    def __init__(self, session, t_col, t_row, temper, precip, tilesets=('grass', 'grass')):
+    def __init__(self, t_col, t_row, temper, precip, tilesets=('grass', 'grass')):
         self.x = 0
         self.y = 0
         self.tilesets = tilesets
@@ -20,7 +20,8 @@ class Zone:
         self.south_neighbor = None
         self.east_neighbor = None
         self.west_neighbor = None
-        self.initialized = False  # refers to if the zone has been checked to be connected with neighbors
+
+        self.initialized = False
 
         for tileset in tilesets:
             if tileset not in self.tile_spritenames.keys():
@@ -65,7 +66,7 @@ class Zone:
             session['scrolling'] = True
 
         for tile in self.tile_list():
-            tile.load()
+            tile.load(session)
 
         # self.initialized must be made true in main.py - generate_world() after connecting to other zones
 
@@ -82,7 +83,7 @@ class Zone:
         self.west_neighbor = None
 
         for tile in self.tile_list():
-            tile.unload()
+            tile.unload(session)
 
         self.initialized = False
 
