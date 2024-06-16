@@ -1,8 +1,15 @@
+Peter Says:
+establish basic entity map behaviors, then start battles, then try out traveling through world
+
+initialize factions when building world
+
 both parties decide action before turns start, faster is much more likely to first
 regular turns give access to every body part
 extra turns are prompted at random after first move selection
 extra turns more possible with very fast limbs, but may only use those limbs
 turn order decided by average AGI across all body parts
+
+hud
 
 save session: acts as regular gamestate saving
 save zone: marks loaded zone to store a copy of once unloaded, can be added to worlds during generation on new games

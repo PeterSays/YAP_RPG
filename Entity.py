@@ -5,10 +5,12 @@ import os
 
 
 class Entity:
-    def __init__(self, name, spritename, pos, spr_off=(0, 0), player=False):
+    def __init__(self, name, spritename, pos, spr_off=(0, 0), player=False, faction=None):
         self.name = name
         self.spritename = spritename
         self.sprite = None
+        self.is_player = player
+        self.move_dir = (0, 0)
         self.pos = pos
         self.sprite_offset = spr_off
         self.x = self.pos[0] * 32
@@ -16,6 +18,12 @@ class Entity:
         self.marchto_x = self.pos[0] * 32
         self.marchto_y = self.pos[1] * 32
         self.blocking = []
+        self.pending_battle = None
+        self.faction_alignment = {}
+        self.entity_relations = {}
+        self.faction = faction
+        if self.is_player:
+            self.faction = 'Player Team'
 
         self.landed = False
 
@@ -25,6 +33,30 @@ class Entity:
         self.marchto_x = self.pos[0] * 32
         self.marchto_y = self.pos[1] * 32
         self.sprite = pygame.image.load(f'{os.curdir}/sprite/map_entities/{self.spritename}')
+        if self.faction and self.faction in ses['factions'].keys():
+
+            for ent in ses['entities']:
+                if ent.name not in self.entity_relations.keys():
+                    relation = 0
+                    if ent.faction and ses['factions'][self.faction]:
+                        if ent.faction in ses['factions'][self.faction].keys():
+                            relation = ses['factions'][self.faction][ent.faction]
+
+                    self.entity_relations[ent.name] = relation
+                    if self.name not in ent.entity_relations.keys():
+                        ent.entity_relations[self.name] = relation
+
+        elif self.faction:
+            ses['factions'][self.faction] = {}
+
+        else:
+            for ent in ses['entities']:
+                if ent.name not in self.entity_relations.keys():
+                    relation = random.randint(-25, 25)
+                    self.entity_relations[ent.name] = relation
+                    if self.name not in ent.entity_relations.keys():
+                        ent.entity_relations[self.name] = relation
+
         if self not in ses['entities']:
             ses['entities'].append(self)
 
@@ -32,6 +64,15 @@ class Entity:
         self.sprite = None
         if self in ses['entities']:
             ses['entities'].remove(self)
+
+    def get_relation(self, withwho):
+        pass
+
+    def change_entity_relation(self, withwho, amount):
+        pass
+
+    def change_faction_alignment(self, ses, withfac, amount):
+        pass
 
     def update(self):
         still_x = False

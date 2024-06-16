@@ -13,6 +13,18 @@ scr_height = 480
 screen = pygame.display.set_mode((scr_width, scr_height))
 pygame.display.set_caption("YAPSRPG")
 
+key_map = {
+    'MoveNW': pygame.K_KP7,
+    'MoveN': pygame.K_KP8,
+    'MoveNE': pygame.K_KP9,
+    'MoveE': pygame.K_KP6,
+    'MoveSE': pygame.K_KP3,
+    'MoveS': pygame.K_KP2,
+    'MoveSW': pygame.K_KP1,
+    'MoveW': pygame.K_KP4,
+    'Stay': pygame.K_KP5,
+}
+
 session = {
     'screen_width': scr_width,
     'screen_height': scr_height,
@@ -23,8 +35,10 @@ session = {
     'latitude': 3,
     'longitude': 3,
     'world': [],
+    'player': None,
     'entities': [],
-    'structures': []
+    'structures': [],
+    'factions': {},  # names of other factions as keys, relations as values
 }
 
 tileset_properties = {
@@ -92,6 +106,7 @@ def generate_world(ses, lat, lon):
 
     starting_tile = random.choice(starting_zone.tile_list())
     player = Entity('peter1', f'peter.png', starting_tile.pos, player=True)
+    ses['player'] = player
 
     starting_tile.ent_join(player, None, forced=True)
     starting_zone.load(ses)
@@ -100,6 +115,8 @@ def generate_world(ses, lat, lon):
 
 
 session['world'] = generate_world(session, 3, 3)
+player_sent_input = False
+moveto_attempt = None
 
 display_array = [[], [], [], [], []]
 frame_no = -1
@@ -109,6 +126,45 @@ while running:
     for event in pygame.event.get():
         if event.type == QUIT:
             running = False
+        elif event.type == KEYDOWN and not player_sent_input and session['player']:
+            cur_pos = session['player'].pos
+            cur_tile = session['zone_loaded'][0].tile_array[cur_pos[1]][cur_pos[0]]
+            if event.key == key_map['MoveN']:
+                player_sent_input = True
+                moveto_attempt = cur_tile.north
+                session['player'].move_dir = (0, -1)
+            elif event.key == key_map['MoveNW']:
+                player_sent_input = True
+                moveto_attempt = cur_tile.northwest
+                session['player'].move_dir = (-1, -1)
+            elif event.key == key_map['MoveNE']:
+                player_sent_input = True
+                moveto_attempt = cur_tile.northeast
+                session['player'].move_dir = (1, -1)
+            elif event.key == key_map['MoveE']:
+                player_sent_input = True
+                moveto_attempt = cur_tile.east
+                session['player'].move_dir = (1, 0)
+            elif event.key == key_map['MoveSE']:
+                player_sent_input = True
+                moveto_attempt = cur_tile.southeast
+                session['player'].move_dir = (1, 1)
+            elif event.key == key_map['MoveS']:
+                player_sent_input = True
+                moveto_attempt = cur_tile.south
+                session['player'].move_dir = (0, 1)
+            elif event.key == key_map['MoveSW']:
+                player_sent_input = True
+                moveto_attempt = cur_tile.southwest
+                session['player'].move_dir = (-1, 1)
+            elif event.key == key_map['MoveW']:
+                player_sent_input = True
+                moveto_attempt = cur_tile.west
+                session['player'].move_dir = (-1, 0)
+            elif event.key == key_map['Stay']:
+                player_sent_input = True
+                moveto_attempt = None
+                session['player'].move_dir = (0, 0)
 
     # Gameloop
     if session['game_phase'] == 'map':
@@ -116,14 +172,34 @@ while running:
         display_array[1].extend(session['structures'])
         display_array[2].extend(session['entities'])
 
+        if player_sent_input and session['player']:  # player move
+            player_sent_input = False
+            if moveto_attempt:
+                current_pos = session['player'].pos
+                current_tile = session['zone_loaded'][0].tile_array[current_pos[1]][current_pos[0]]
+                move_result = moveto_attempt.ent_join(session['player'], current_tile)
+                move_success = move_result[0]
+                if move_success:
+                    pass
+                else:
+                    print(f'{move_success}: {move_result[1]}')
+            elif session['player'].move_dir[0] == 0 and session['player'].move_dir[1] == 0:
+                pass
+            else:  # run into wall
+                print('bump')  # play 'bump' noise
+
+            session['player'].move_dir = (0, 0)
+
         if frame_no > 100 and len(session['entities']) == 1:
             player2 = Entity('peter2', f'peter.png', (random.randint(0, session['latitude']-1), random.randint(0, session['longitude']-1)), player=False)
-            starting_tile = random.choice(session['zone_loaded'][0].tile_list())
-            starting_tile.ent_join(player2, None, forced=True)
+            st = random.choice(session['zone_loaded'][0].tile_list())
+            st.ent_join(player2, None, forced=True)
             player2.load(session)
 
         for ent in session['entities']:
             ent.update()
+            if not ent.is_player:  # notplayer move
+                ent.move_dir = (0, 0)
 
     # Display
     layer = -1

@@ -12,27 +12,26 @@ class Tile:
         self.x = pos[0]*32
         self.initialized = False  # refers to if the tile has been checked to connect with adjacent tiles
         self.north = None
+        self.northwest = None
+        self.northeast = None
         self.south = None
+        self.southwest = None
+        self.southeast = None
         self.east = None
         self.west = None
         self.sprite = None
         self.tileset = tileset
         self.spritename = spritename
+        self.walkable = True
 
         self.structure = None
         self.entity = None
 
         self.ses = None
 
-
     def blocked(self, from_dir):
-        all_blocks = []
-        for ent in self.entities:
-            if len(ent.blocking):
-                all_blocks.extend(ent.blocking)
-        all_blocks.extend(self.structure.blocking)
-        if from_dir in all_blocks:
-            return True
+        if self.structure and from_dir in self.structure.blocking:
+            return self.structure
 
     def ent_leave(self):
         enthere = self.entity
@@ -57,28 +56,76 @@ class Tile:
                 self.load(fromtile.ses)
 
         if not self.entity and (forced or not self.blocked(from_dir)):
+            if fromtile:
+                fromtile.entity = None
             self.entity = ent
+            self.entity.pos = self.pos
+            self.entity.marchto_x = self.pos[0] * 32
+            self.entity.marchto_y = self.pos[1] * 32
+            return True, None
 
-            return True
+        elif not self.entity and self.structure:  # blocked by structure
 
-        elif not self.entity:
-            return False
+            return False, self.structure
+
+        elif self.entity:  # blocked by entity
+            print(f'Entity collision @ {self.pos}')
+            # determine reaction based on allegiance
+            # battle if opposed
+            # winner takes the spot, loser dies, positions stay if fled
+            # swap places with player character if unopposed
+            if ent.entity_relations[self.entity.name] < -50:  # enemy
+                ent.pending_battle = self.entity
+
+                return False, self.entity
+            else:
+                swapping_ent = self.entity
+                self.entity = None
+                fromtile.entity = None
+                fromtile.ent_join(swapping_ent, self)
+                self.entity = ent
+                self.entity.pos = self.pos
+                self.entity.marchto_x = self.pos[0] * 32
+                self.entity.marchto_y = self.pos[1] * 32
+                return True, swapping_ent
         else:
-            return False
+            return False, None
 
     def load(self, session):
         self.sprite = pygame.image.load(f'{os.curdir}/sprite/tiles/{self.spritename}')
         self.y = self.pos[1]*32 + self.zone.y
         self.x = self.pos[0]*32 + self.zone.x
+        print(f'Loading tile {self.pos}')
 
         if self.pos[1] > 0:
             self.north = self.zone.tile_array[self.pos[1]-1][self.pos[0]]
+            self.zone.tile_array[self.pos[1] - 1][self.pos[0]].south = self
+
+            if self.pos[0] > 0:
+                self.northwest = self.zone.tile_array[self.pos[1]-1][self.pos[0]-1]
+                self.zone.tile_array[self.pos[1] - 1][self.pos[0] - 1].southeast = self
+
+            if self.pos[0] < len(self.zone.tile_array)-1:
+                self.northeast = self.zone.tile_array[self.pos[1]-1][self.pos[0]+1]
+                self.zone.tile_array[self.pos[1] - 1][self.pos[0] + 1].southwest = self
+
         if self.pos[1] < len(self.zone.tile_array)-1:
             self.south = self.zone.tile_array[self.pos[1]+1][self.pos[0]]
+            self.zone.tile_array[self.pos[1] + 1][self.pos[0]].north = self
+            if self.pos[0] > 0:
+                self.southwest = self.zone.tile_array[self.pos[1]+1][self.pos[0]-1]
+                self.zone.tile_array[self.pos[1] + 1][self.pos[0] - 1].northeast = self
+
+            if self.pos[0] < len(self.zone.tile_array)-1:
+                self.southeast = self.zone.tile_array[self.pos[1]+1][self.pos[0]+1]
+                self.zone.tile_array[self.pos[1] + 1][self.pos[0] + 1].northwest = self
+
         if self.pos[0] > 0:
             self.west = self.zone.tile_array[self.pos[1]][self.pos[0]-1]
+            self.zone.tile_array[self.pos[1]][self.pos[0] - 1].east = self
         if self.pos[0] < len(self.zone.tile_array[0])-1:
             self.east = self.zone.tile_array[self.pos[1]][self.pos[0]+1]
+            self.zone.tile_array[self.pos[1]][self.pos[0] + 1].west = self
 
         self.initialized = True
         self.ses = session
@@ -94,7 +141,11 @@ class Tile:
         self.x = self.pos[0]*32
         self.y = self.pos[1]*32
         self.north = None
+        self.northwest = None
+        self.northeast = None
         self.south = None
+        self.southwest = None
+        self.southeast = None
         self.east = None
         self.west = None
         self.initialized = False
