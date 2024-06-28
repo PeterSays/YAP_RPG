@@ -4,6 +4,7 @@ import pygame
 from pygame.locals import *
 from Zone import Zone
 from Entity import Entity
+from Body import Body, Part
 
 pygame.init()
 fps = 60
@@ -38,7 +39,15 @@ session = {
     'player': None,
     'entities': [],
     'structures': [],
-    'factions': {},  # names of other factions as keys, relations as values
+    'factions': {  # names of other factions as keys, relations as values
+        'Player Team': {
+            'Peterling Horde': -100
+        },
+
+        'Peterling Horde': {
+            'Player Team': -100
+        }
+    },
 }
 
 tileset_properties = {
@@ -105,16 +114,31 @@ def generate_world(ses, lat, lon):
             this_zone.initialized = True
 
     starting_tile = random.choice(starting_zone.tile_list())
-    player = Entity('peter1', f'peter.png', starting_tile.pos, player=True)
+    player = Entity('peter1', f'peter.png', starting_tile.pos, player=True, spr_off=(-1, -1))
     ses['player'] = player
 
     starting_tile.ent_join(player, None, forced=True)
     starting_zone.load(ses)
+    player.load(ses)
 
     return new_world
 
 
+def nonplayer_battle(ses, attacker, attacked):
+    pass
+
+def battle_start(ses, enemy):
+    ses['game_phase'] = 'battle'
+    if enemy.pending_battle:
+        attacker = enemy
+        attacked = ses['player']
+    else:
+        attacker = ses['player']
+        attacked = enemy
+
+
 session['world'] = generate_world(session, 3, 3)
+input_interrupt = False
 player_sent_input = False
 moveto_attempt = None
 
@@ -126,7 +150,7 @@ while running:
     for event in pygame.event.get():
         if event.type == QUIT:
             running = False
-        elif event.type == KEYDOWN and not player_sent_input and session['player']:
+        elif event.type == KEYDOWN and not player_sent_input and not input_interrupt and session['player']:
             cur_pos = session['player'].pos
             cur_tile = session['zone_loaded'][0].tile_array[cur_pos[1]][cur_pos[0]]
             if event.key == key_map['MoveN']:
@@ -190,16 +214,56 @@ while running:
 
             session['player'].move_dir = (0, 0)
 
-        if frame_no > 100 and len(session['entities']) == 1:
-            player2 = Entity('peter2', f'peter.png', (random.randint(0, session['latitude']-1), random.randint(0, session['longitude']-1)), player=False)
+        if frame_no == 20 and len(session['entities']) == 1:
+            player2 = Entity('peter2', f'peter.png', (random.randint(0, session['latitude']-1), random.randint(0, session['longitude']-1)), spr_off=(-1, -1))
             st = random.choice(session['zone_loaded'][0].tile_list())
             st.ent_join(player2, None, forced=True)
             player2.load(session)
 
+        if frame_no == 40 and len(session['entities']) == 2:
+            peterling = Entity('peterling1', f'peterling.png', (random.randint(0, session['latitude']-1), random.randint(0, session['longitude']-1)), spr_off=(2, -7), faction='Peterling Horde')
+            st = random.choice(session['zone_loaded'][0].tile_list())
+            st.ent_join(peterling, None, forced=True)
+            peterling.load(session)
+
         for ent in session['entities']:
             ent.update()
-            if not ent.is_player:  # notplayer move
-                ent.move_dir = (0, 0)
+
+            if not ent.is_player:
+                if ent.current_action and 'move' in ent.current_action.lower():  # notplayer move
+                    current_pos = ent.pos
+                    current_tile = session['zone_loaded'][0].tile_array[current_pos[1]][current_pos[0]]
+                    moveto_tile = session['zone_loaded'][0].tile_array[current_pos[1] + ent.move_dir[1]][current_pos[0] + ent.move_dir[0]]
+                    move_result = moveto_tile.ent_join(ent, current_tile)
+                    move_success = move_result[0]
+
+                    ent.move_dir = (0, 0)
+                    ent.action_completed = True
+
+                    if ent.current_action == 'MoveN':
+                        ent.move_dir = (0, -1)
+                    elif ent.current_action == 'MoveNW':
+                        ent.move_dir = (-1, -1)
+                    elif ent.current_action == 'MoveNE':
+                        ent.move_dir = (1, -1)
+                    elif ent.current_action == 'MoveE':
+                        ent.move_dir = (-1, 0)
+                    elif ent.current_action == 'W':
+                        ent.move_dir = (-1, 0)
+                    elif ent.current_action == 'MoveSW':
+                        ent.move_dir = (-1, 1)
+                    elif ent.current_action == 'MoveSE':
+                        ent.move_dir = (1, 1)
+                    elif ent.current_action == 'MoveS':
+                        ent.move_dir = (0, 1)
+
+                if ent.pending_battle and ent.pending_battle.is_player:  # nonplayer starts battle with player
+                    pass
+                elif ent.pending_battle:  # nonplayer starts battle with nonplayer
+                    pass
+                
+            elif ent.pending_battle:  # player starts battle (with nonplayer)
+                pass
 
     # Display
     layer = -1

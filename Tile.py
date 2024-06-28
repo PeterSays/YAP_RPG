@@ -74,9 +74,9 @@ class Tile:
             # battle if opposed
             # winner takes the spot, loser dies, positions stay if fled
             # swap places with player character if unopposed
-            if ent.entity_relations[self.entity.name] < -50:  # enemy
+            if ent.entity_relations[self.entity.name] < -50:  # enemies
                 ent.pending_battle = self.entity
-
+                ent.pending_tile = self
                 return False, self.entity
             else:
                 swapping_ent = self.entity
@@ -95,7 +95,6 @@ class Tile:
         self.sprite = pygame.image.load(f'{os.curdir}/sprite/tiles/{self.spritename}')
         self.y = self.pos[1]*32 + self.zone.y
         self.x = self.pos[0]*32 + self.zone.x
-        print(f'Loading tile {self.pos}')
 
         if self.pos[1] > 0:
             self.north = self.zone.tile_array[self.pos[1]-1][self.pos[0]]
