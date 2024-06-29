@@ -83,8 +83,16 @@ def generate_world(ses, lat, lon):
             possible_tilesets.extend(extra_tilesets)
             ts1 = random.choice(possible_tilesets)
             ts2 = random.choice(possible_tilesets)
+            ts1_names = []
+            for i in range(3):
+                ts1_names.append(f'{ts1}_{i}.png')
+            ts2_names = []
+            for i in range(3):
+                ts2_names.append(f'{ts2}_{i}.png')
+            ts_names = {ts1: ts1_names, ts2: ts2_names}
 
-            new_zone = Zone(20, 15, current_temp, current_prec, tilesets=(ts1, ts2))
+            new_zone = Zone(20, 15, current_temp, current_prec, tilesets=(ts1, ts2),
+                            tile_spritenames=ts_names)
             new_row.append(new_zone)
 
             if row == round((lat-1)/2) and col == round((lon-1)/2):
@@ -126,6 +134,7 @@ def generate_world(ses, lat, lon):
 
 def nonplayer_battle(ses, attacker, attacked):
     pass
+
 
 def battle_start(ses, enemy):
     ses['game_phase'] = 'battle'

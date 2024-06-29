@@ -18,3 +18,5 @@ save character: saves a copy of the player object, isolated from current game as
 place entities and structures in a zone when loading, remove them all when unloading the zone
 zone attributes like faction populations are edited while playing so that reloading the zone doesn't reset progress
 when zone is loaded, its structures and entities are loaded into the session's entities/structures list
+
+refactor to allow for pyinstaller with --onedir, don't allow any files outside of main.py to mention paths

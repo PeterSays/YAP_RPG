@@ -4,7 +4,8 @@ from random import choice
 from Tile import Tile
 
 class Zone:
-    def __init__(self, t_col, t_row, temper, precip, tilesets=('grass', 'grass')):
+    def __init__(self, t_col, t_row, temper, precip, tilesets=('grass', 'grass'),
+                 tile_spritenames={'grass': ['grass_0.png', 'grass_1.png', 'grass_2.png']}):
         self.x = 0
         self.y = 0
         self.tilesets = tilesets
@@ -23,14 +24,7 @@ class Zone:
 
         self.initialized = False
 
-        for tileset in tilesets:
-            if tileset not in self.tile_spritenames.keys():
-                self.tile_spritenames[tileset] = []
-
-                all_tiles = os.listdir('./sprite/tiles')
-                for til in all_tiles:
-                    if til[:til.find('_')] == tileset:
-                        self.tile_spritenames[tileset].append(til)
+        self.tile_spritenames = tile_spritenames
 
         for row_ind in range(t_row):
             new_row = []
