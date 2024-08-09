@@ -14,6 +14,75 @@ scr_height = 480
 screen = pygame.display.set_mode((scr_width, scr_height))
 pygame.display.set_caption("YAPSRPG")
 
+ground_level = scr_height - 30
+
+class Line:
+    def __init__(self, x1, y1, x2, y2, col, thick=1):
+        self.x1 = x1
+        self.y1 = y1
+        self.x2 = x2
+        self.y2 = y2
+        self.color = col
+        self.thickness = thick
+
+    def pos1(self):
+        return self.x1, self.y1
+
+    def pos2(self):
+        return self.x2, self.y2
+
+
+class Shape:
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+        self.lines = []
+
+    def move(self, mx, my):
+        self.x += mx
+        self.y = my
+        for line in self.lines:
+            line.x1 += mx
+            line.x2 += mx
+            line.y1 += my
+            line.y2 += my
+
+
+class Background:
+    def __init__(self, ses, flow1=1, flow2=2, extremeness=5, shape='tree',
+                 pri=(100, 100, 100), sec=(25, 25, 25)):
+        self.clock = 0
+        self.shape_interval = 200
+        self.extremeness = extremeness
+        self.shape_type = shape
+        self.shapes1 = []
+        self.shapes2 = []
+        self.session = ses
+        self.primary_color = pri
+        self.secondary_color = sec
+        self.flow1 = flow1  # how many pixels a shape in the front bg will move
+        self.flow2 = flow2  # how many pixels a shape in the back bg will move
+
+    def draw_shape(self, which=0):
+        start = 0
+        flows = (self.flow1, self.flow2)
+        shapes = (self.shapes1, self.shapes2)
+        if flows[which] < 0:
+            start = scr_width
+        new_shape = Shape(start, ground_level)
+
+        shapes[which].append(new_shape)
+
+    def routine(self):
+        self.clock += 1
+
+        if self.clock % self.shape_interval == 0:
+            self.draw_shape()
+
+        for sh in self.shapes:
+            sh.move(self.flow)
+
+
 key_map = {
     'MoveNW': pygame.K_KP7,
     'MoveN': pygame.K_KP8,
@@ -48,6 +117,7 @@ session = {
             'Player Team': -100
         }
     },
+    'battle': {'attacker': None, 'attacked': None}
 }
 
 tileset_properties = {
@@ -132,7 +202,7 @@ def generate_world(ses, lat, lon):
     return new_world
 
 
-def nonplayer_battle(ses, attacker, attacked):
+def nonplayer_battle_start(ses, attacker, attacked):
     pass
 
 
@@ -144,6 +214,34 @@ def battle_start(ses, enemy):
     else:
         attacker = ses['player']
         attacked = enemy
+
+    ses['battle']['attacker'] = attacker
+    ses['battle']['attacked'] = attacked
+
+    attacker.body.load()
+    attacked.body.load()
+
+    # attacker faces left from the right side of the screen
+    # attacked faces right from the left side of the screen
+
+    if attacker.body.frontside == 'right':
+        attacker.body.sprite = pygame.transform.flip(attacker.body.sprite, True, False)
+        attacker.body.x_flipped = True
+
+    if attacked.body.frontside == 'left':
+        attacked.body.sprite = pygame.transform.flip(attacked.body.sprite, True, False)
+        attacked.body.x_flipped = True
+
+    attacked.body.x = round(scr_width/2) - (30 + attacked.body.sprite.get_width())
+    attacked.body.y = ground_level - attacked.body.sprite.get_height()
+
+    attacker.body.x = round(scr_width/2) + 30
+    attacker.body.y = ground_level - attacker.body.sprite.get_height()
+
+
+def battle_end(ses):
+    ses['battle']['attacker'].body.x_flipped = False
+    ses['battle']['attacked'].body.x_flipped = False
 
 
 session['world'] = generate_world(session, 3, 3)
@@ -160,44 +258,48 @@ while running:
         if event.type == QUIT:
             running = False
         elif event.type == KEYDOWN and not player_sent_input and not input_interrupt and session['player']:
-            cur_pos = session['player'].pos
-            cur_tile = session['zone_loaded'][0].tile_array[cur_pos[1]][cur_pos[0]]
-            if event.key == key_map['MoveN']:
-                player_sent_input = True
-                moveto_attempt = cur_tile.north
-                session['player'].move_dir = (0, -1)
-            elif event.key == key_map['MoveNW']:
-                player_sent_input = True
-                moveto_attempt = cur_tile.northwest
-                session['player'].move_dir = (-1, -1)
-            elif event.key == key_map['MoveNE']:
-                player_sent_input = True
-                moveto_attempt = cur_tile.northeast
-                session['player'].move_dir = (1, -1)
-            elif event.key == key_map['MoveE']:
-                player_sent_input = True
-                moveto_attempt = cur_tile.east
-                session['player'].move_dir = (1, 0)
-            elif event.key == key_map['MoveSE']:
-                player_sent_input = True
-                moveto_attempt = cur_tile.southeast
-                session['player'].move_dir = (1, 1)
-            elif event.key == key_map['MoveS']:
-                player_sent_input = True
-                moveto_attempt = cur_tile.south
-                session['player'].move_dir = (0, 1)
-            elif event.key == key_map['MoveSW']:
-                player_sent_input = True
-                moveto_attempt = cur_tile.southwest
-                session['player'].move_dir = (-1, 1)
-            elif event.key == key_map['MoveW']:
-                player_sent_input = True
-                moveto_attempt = cur_tile.west
-                session['player'].move_dir = (-1, 0)
-            elif event.key == key_map['Stay']:
-                player_sent_input = True
-                moveto_attempt = None
-                session['player'].move_dir = (0, 0)
+            if session['game_phase'] == 'map':
+                cur_pos = session['player'].pos
+                cur_tile = session['zone_loaded'][0].tile_array[cur_pos[1]][cur_pos[0]]
+                if event.key == key_map['MoveN']:
+                    player_sent_input = True
+                    moveto_attempt = cur_tile.north
+                    session['player'].move_dir = (0, -1)
+                elif event.key == key_map['MoveNW']:
+                    player_sent_input = True
+                    moveto_attempt = cur_tile.northwest
+                    session['player'].move_dir = (-1, -1)
+                elif event.key == key_map['MoveNE']:
+                    player_sent_input = True
+                    moveto_attempt = cur_tile.northeast
+                    session['player'].move_dir = (1, -1)
+                elif event.key == key_map['MoveE']:
+                    player_sent_input = True
+                    moveto_attempt = cur_tile.east
+                    session['player'].move_dir = (1, 0)
+                elif event.key == key_map['MoveSE']:
+                    player_sent_input = True
+                    moveto_attempt = cur_tile.southeast
+                    session['player'].move_dir = (1, 1)
+                elif event.key == key_map['MoveS']:
+                    player_sent_input = True
+                    moveto_attempt = cur_tile.south
+                    session['player'].move_dir = (0, 1)
+                elif event.key == key_map['MoveSW']:
+                    player_sent_input = True
+                    moveto_attempt = cur_tile.southwest
+                    session['player'].move_dir = (-1, 1)
+                elif event.key == key_map['MoveW']:
+                    player_sent_input = True
+                    moveto_attempt = cur_tile.west
+                    session['player'].move_dir = (-1, 0)
+                elif event.key == key_map['Stay']:
+                    player_sent_input = True
+                    moveto_attempt = None
+                    session['player'].move_dir = (0, 0)
+            elif session['game_phase'] == 'battle':
+                atkr = session['battle']['attacker']
+                atkd = session['battle']['attacked']
 
     # Gameloop
     if session['game_phase'] == 'map':
@@ -230,7 +332,7 @@ while running:
             player2.load(session)
 
         if frame_no == 40 and len(session['entities']) == 2:
-            peterling = Entity('peterling1', f'peterling.png', (random.randint(0, session['latitude']-1), random.randint(0, session['longitude']-1)), spr_off=(2, -7), faction='Peterling Horde')
+            peterling = Entity('peterling1', f'peterling.png', (random.randint(0, session['latitude']-1), random.randint(0, session['longitude']-1)),  spr_off=(2, -7), faction='Peterling Horde')
             st = random.choice(session['zone_loaded'][0].tile_list())
             st.ent_join(peterling, None, forced=True)
             peterling.load(session)
@@ -267,12 +369,19 @@ while running:
                         ent.move_dir = (0, 1)
 
                 if ent.pending_battle and ent.pending_battle.is_player:  # nonplayer starts battle with player
-                    pass
+                    input_interrupt = True
+                    battle_start(session, ent)
                 elif ent.pending_battle:  # nonplayer starts battle with nonplayer
-                    pass
+                    nonplayer_battle_start(session)
                 
             elif ent.pending_battle:  # player starts battle (with nonplayer)
-                pass
+                input_interrupt = True
+                battle_start(session, ent.pending_battle)
+
+    elif session['game_phase'] == 'battle':
+        display_array[2].append(Line(0, ground_level, scr_width, ground_level, (75, 20, 50), thick=5))  # the ground
+        display_array[3].append(session['battle']['attacker'].body)
+        display_array[3].append(session['battle']['attacked'].body)
 
     # Display
     layer = -1
@@ -281,7 +390,10 @@ while running:
         layer += 1
 
         for displayed in display_list:
-            screen.blit(displayed.sprite, (displayed.x, displayed.y))
+            if type(displayed) == Line:
+                pygame.draw.line(screen, displayed.color, displayed.pos1(), displayed.pos2())
+            else:
+                screen.blit(displayed.sprite, (displayed.x, displayed.y))
     display_array = [[], [], [], [], []]
 
     pygame.display.flip()

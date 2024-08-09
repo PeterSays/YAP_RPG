@@ -3,11 +3,34 @@ establish basic entity map behaviors, then start battles, then try out traveling
 
 initialize factions when building world
 
-both parties decide action before turns start, faster is much more likely to first
-regular turns give access to every body part
+make purpose invervals schematic-editable
+natural healing happens when a part is filled with liquid the core uses as biofluid
+
+both parties decide action before turns start, faster is proportionally more likely to get extra turns
+regular turns give access to every body part in range
 extra turns are prompted at random after first move selection
 extra turns more possible with very fast limbs, but may only use those limbs
 turn order decided by average AGI across all body parts
+'approach' and 'back off' as options to decrease distance
+
+informational damage - opponents have mental shields by default to protect themselves from mental attacks
+when the shield is broken the attack takes the form of a permanent debuff that only occasionally takes effect or a
+passive skill that effects them negatively
+stronger mental abilities make the "thought" that it places in the subjects mind more likely to activate
+
+battle details:
+damage is amplified by difference in density
+stats for a limb attack averaged across all limb parts
+range for a limb attack summed across all limb parts
+
+enemies can be spawned at any level and stats should generate appropriately
+
+material interactions
+have a function that returns the outcome of two interacting materials:
+material.reaction(reagent) --> ('explode', power_int) / ('create', Material)
+and function for each situation where materials can interact (that calls the above function and
+interprets return content):
+physobj.collision(other_physobj)
 
 hud
 
@@ -19,4 +42,12 @@ place entities and structures in a zone when loading, remove them all when unloa
 zone attributes like faction populations are edited while playing so that reloading the zone doesn't reset progress
 when zone is loaded, its structures and entities are loaded into the session's entities/structures list
 
-refactor to allow for pyinstaller with --onedir, don't allow any files outside of main.py to mention paths
+refactor to allow for pyinstaller with --onedir:
+Zone.py cannot reference the "sprite" folder path, but Entity.py can for some reason
+
+body schematic documents
+text file that contains all information about a creature
+read by Body.__init__ when loaded into world by Entity.__init__
+
+later:
+hardcode checksums each update so the game knows if files have been edited; mark world and player with the "customized" flag

@@ -1,0 +1,3 @@
+base: humanoid
+frontside: right
+volume: 32530

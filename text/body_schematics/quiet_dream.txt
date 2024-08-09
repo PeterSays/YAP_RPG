@@ -1,0 +1,16 @@
+base: humanoid
+frontside: left
+volume: 12000
+core_mat: ectoplasm
+core_fluid: ectoplasm
+core_mods: ['STR', 'CON', 'INT', 'WIS']
+core_amts: [(0.7, 1.0), (1.5, 1.9), (2.0, 2.5), (3.0, 3.9)]
+core_vary: 3
+rem_part: arm
+rem_part_end
+add_part: arm
+purpose: levitate
+rel_size: 0.11
+reach: 6
+place: mid
+add_part_end

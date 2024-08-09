@@ -3,14 +3,16 @@ import pygame
 import os
 
 from Body import Body
+from Stats import Stats, new_stats
 
 
 class Entity:
-    def __init__(self, name, spritename, pos, spr_off=(0, 0), player=False, faction=None):
+    def __init__(self, name, spritename, pos, spr_off=(0, 0), player=False, faction=None, lvl=5, stat_dict=None):
         self.name = name
         self.spritename = spritename
         self.sprite = None
         self.is_player = player
+        self.in_battle = None
         self.move_dir = (0, 0)
         self.pos = pos
         self.sprite_offset = spr_off
@@ -31,6 +33,8 @@ class Entity:
         self.current_action = None
         self.action_completed = False
         self.action_queue = []
+
+        self.body = Body(self, self.spritename, stats_dict=stat_dict, lvl=lvl)
 
     def load(self, ses):
         print(f'Loading {self.name}')

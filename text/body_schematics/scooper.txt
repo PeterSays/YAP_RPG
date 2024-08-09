@@ -1,0 +1,22 @@
+base: humanoid
+frontside: left
+volume: 35200
+core_mods: ['STR', 'CON', 'INT', 'WIS', 'CHA']
+core_amts: [(1.3, 1.7), (1.5, 2.0), (0.4, 0.7), (0.7, 0.9), (0.5, 0.8)]
+core_vary: 5
+rem_part: arm
+rem_part_end
+add_part: arm
+reach: 8
+stat_mods: ['STR', 'CON']
+stat_amts: [(1.5, 2.0), (1.3, 1.7)]
+rel_size: 0.3
+place: mid
+add_part_end
+add_part: hand
+reach: 3
+rel_size: 0.15
+stat_mods: ['STR', 'CON']
+stat_amts: [(1.5, 2.0), (1.3, 1.7)]
+place: last_part
+add_part_end
